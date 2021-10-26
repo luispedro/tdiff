@@ -2,9 +2,23 @@ use std::env::args;
 use std::fs;
 use std::cmp::max;
 
+fn normalize_sentence(sen : &str) -> String {
+    return sen
+            .trim()
+            .replace("\n", " ")
+            .replace("  ", " "); // really should be more general
+}
+
+fn sentences(text : String) -> Vec<String> {
+    return text
+        .split(".")
+        .map(normalize_sentence)
+        .collect();
+}
+
 fn compare(text1: String, text2: String) {
-    let lines1 : Vec<&str> = text1.split("\n").collect();
-    let lines2 : Vec<&str> = text2.split("\n").collect();
+    let lines1 : Vec<String> = sentences(text1);
+    let lines2 : Vec<String> = sentences(text2);
     let max_len = max(lines1.len(), lines2.len());
     for ix in 0..max_len {
         if ix >= lines1.len() {
@@ -15,6 +29,8 @@ fn compare(text1: String, text2: String) {
             println!("=");
         } else {
             println!("~");
+            println!("    {}", lines1[ix]);
+            println!("    {}", lines2[ix]);
         }
     }
 }
