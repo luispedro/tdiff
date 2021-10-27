@@ -1,3 +1,4 @@
+#![feature(iter_intersperse)]
 use std::env::args;
 use std::fs;
 use std::cmp::max;
@@ -5,8 +6,9 @@ use std::cmp::max;
 fn normalize_sentence(sen : &str) -> String {
     return sen
             .trim()
-            .replace("\n", " ")
-            .replace("  ", " "); // really should be more general
+            .split_whitespace()
+            .intersperse(" ")
+            .collect();
 }
 
 fn sentences(text : String) -> Vec<String> {
