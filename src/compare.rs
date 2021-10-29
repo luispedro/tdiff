@@ -12,7 +12,7 @@ enum DiffElement<T> {
 }
 
 
-fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>) -> (u64, Vec<DiffElement<T>>) {
+fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T, &T) -> u64) -> (u64, Vec<DiffElement<T>>) {
     let mut table : Vec<Vec<u64>> = Vec::new();
     table.resize_with(text1.len() + 1, || {
         let mut v = Vec::new();
@@ -31,7 +31,7 @@ fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>) -> (u64, Ve
             table[i][j] = min(min(
                             table[i-1][i] + 1,
                             table[i][j-1] + 1),
-                            table[i-1][j-1] + (if text1[i-1] == text2[j-1] { 0 } else { 1 })
+                            table[i-1][j-1] + cmp(&text1[i-1], &text2[j-1])
                             )
         }
     }
@@ -44,7 +44,7 @@ fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>) -> (u64, Ve
             walk.push(DiffElement::Equal(text1[p1-1].clone()));
             p1 -= 1;
             p2 -= 1;
-        } else if p1 > 0 && p2 > 0 && val == table[p1-1][p2-1] + 1 && text1[p1-1] != text2[p2 - 1] {
+        } else if p1 > 0 && p2 > 0 && val == table[p1-1][p2-1] + cmp(&text1[p1-1], &text2[p2 - 1]) {
             walk.push(DiffElement::Different(text1[p1-1].clone(), text2[p2 - 1].clone()));
             p1 -= 1;
             p2 -= 1;
@@ -69,8 +69,10 @@ fn compare_sentences(text1: &Sentence, text2: &Sentence) -> (u64, Vec<DiffElemen
                     .map(|s| { DiffElement::Equal(s.to_string()) })
                     .collect());
     }
-    return edit_distance(text1.0.split(" ").map(|s| { s.to_string() }).collect(),
-                         text2.0.split(" ").map(|s| { s.to_string() }).collect())
+    let word_split = |s:&Sentence| { s.0.split(" ").map(|s| { s.to_string() }).collect() };
+    return edit_distance(word_split(text1),
+                         word_split(text2),
+                         |t1, t2| { if t1 == t2 { 0 } else { 1 } })
 }
 
 
