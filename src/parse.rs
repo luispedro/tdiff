@@ -1,3 +1,6 @@
+#[derive(Clone, PartialEq)]
+pub struct Sentence(pub String);
+
 fn normalize_sentence(sen : &str) -> String {
     return sen
             .trim()
@@ -6,11 +9,12 @@ fn normalize_sentence(sen : &str) -> String {
             .collect();
 }
 
-pub fn sentences(text : String) -> Vec<String> {
+pub fn sentences(text : String) -> Vec<Sentence> {
     return text
         .split(".")
         .map(normalize_sentence)
         .filter(|s| { s.len() > 0 })
+        .map(Sentence)
         .collect();
 }
 
