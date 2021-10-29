@@ -60,15 +60,15 @@ fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T,
     (table[text1.len()][text2.len()], walk)
 }
 
-fn compare_sentences(text1: &Sentence, text2: &Sentence) -> (u64, Vec<DiffElement<String>>) {
+fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<DiffElement<&'a str>>) {
     if text1 == text2 {
         return (0, text1
                     .0
                     .split(" ")
-                    .map(|s| { DiffElement::Equal(s.to_string()) })
+                    .map(|s| { DiffElement::Equal(s) })
                     .collect());
     }
-    let word_split = |s:&Sentence| { s.0.split(" ").map(|s| { s.to_string() }).collect() };
+    let word_split = |s:&'a Sentence| { s.0.split(" ").collect() };
     edit_distance(word_split(text1),
                  word_split(text2),
                  |t1, t2| { if t1 == t2 { 0 } else { 1 } },
@@ -76,7 +76,7 @@ fn compare_sentences(text1: &Sentence, text2: &Sentence) -> (u64, Vec<DiffElemen
 }
 
 
-fn print_edit_script(es : &Vec<DiffElement<String>>) {
+fn print_edit_script(es : &Vec<DiffElement<&str>>) {
     for el in es {
         match el {
             DiffElement::Equal(s) => print!("{} ", s),
