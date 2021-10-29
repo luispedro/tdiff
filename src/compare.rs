@@ -11,7 +11,7 @@ enum DiffElement<T> {
 }
 
 
-fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T, &T) -> u64, icost: u64) -> (u64, Vec<DiffElement<T>>) {
+fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&T, &T) -> u64, icost: u64) -> (u64, Vec<DiffElement<T>>) {
     let mut table : Vec<Vec<u64>> = Vec::new();
     table.resize_with(text1.len() + 1, || {
         let mut v = Vec::new();
@@ -69,8 +69,9 @@ fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<
                     .collect());
     }
     let word_split = |s:&'a Sentence| { s.0.split(" ").collect() };
-    edit_distance(word_split(text1),
-                 word_split(text2),
+    edit_distance(
+                 &word_split(text1),
+                 &word_split(text2),
                  |t1, t2| { if t1 == t2 { 0 } else { 1 } },
                  1)
 }
@@ -92,8 +93,8 @@ pub fn compare(text1: String, text2: String) {
     let sentences1 : Vec<Sentence> = super::parse::sentences(text1);
     let sentences2 : Vec<Sentence> = super::parse::sentences(text2);
     let diff = edit_distance(
-                    sentences1,
-                    sentences2,
+                    &sentences1,
+                    &sentences2,
                     |t1,t2| { compare_sentences(&t1, &t2).0 },
                     4).1;
     for el in diff {
