@@ -1,5 +1,6 @@
 use std::cmp::{min, max};
 use super::parse::*;
+use colored::*;
 
 #[derive(Debug)]
 enum DiffElement {
@@ -55,7 +56,19 @@ fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> (u64, Vec<DiffElemen
         }
     }
     walk.reverse();
-    (table[text1.len()][text2.len()], walk)
+    (table[text1.len() - 1][text2.len() - 1], walk)
+}
+
+fn print_edit_script(es : &Vec<DiffElement>) {
+    for el in es {
+        match el {
+            DiffElement::Equal(s) => print!("{} ", s),
+            DiffElement::Insert1(s) => print!("{} ", s.green()),
+            DiffElement::Insert2(s) => print!("{} ", s.red()),
+            DiffElement::Different(s1,s2) => print!("{}{} ", s1.green(), s2.red()),
+        }
+    }
+    println!("");
 }
 
 fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement> {
@@ -78,18 +91,15 @@ fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement> {
 fn show_diff(el : &DiffElement) {
     match el {
         DiffElement::Equal(_) => {
-            println!("=");
         }
         DiffElement::Insert1(s) => {
-            println!("+ {}", s);
+            println!("+ {}", s.green());
         }
         DiffElement::Insert2(s) => {
-            println!("- {}", s);
+            println!("- {}", s.red());
         }
         DiffElement::Different(s1, s2) => {
-            println!("! {}", s1);
-            println!("! {}", s2);
-            println!("D:  {:?}", compare_sentences(s1.split(" ").collect(), s2.split(" ").collect()));
+            print_edit_script(&compare_sentences(s1.split(" ").collect(), s2.split(" ").collect()).1);
         }
     }
 }
