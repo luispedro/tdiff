@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Sentence(pub String);
 
 fn normalize_sentence(sen : &str) -> String {
