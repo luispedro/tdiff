@@ -20,17 +20,17 @@ fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> (u64, Vec<DiffElemen
                     .collect());
     }
     let mut table : Vec<Vec<u64>> = Vec::new();
-    table.resize_with(text2.len() + 1, || {
+    table.resize_with(text1.len() + 1, || {
         let mut v = Vec::new();
-        v.resize(text1.len() + 1, 0);
+        v.resize(text2.len() + 1, 0);
         v
     });
     for i in 0..text1.len() {
-        table[0][i+1] = i as u64;
+        table[i+1][0] = 1+i as u64;
     }
 
     for j in 0..text2.len() {
-        table[j+1][0] = j as u64;
+        table[0][j+1] = 1+j as u64;
     }
     for i in 1..(1+text1.len()) {
         for j in 1..(1+text2.len()) {
@@ -46,25 +46,25 @@ fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> (u64, Vec<DiffElemen
     let mut p2 = text2.len();
     while p1 > 0 || p2 > 0 {
         let val = table[p1][p2];
-        if val == table[p1-1][p2-1] && text1[p1-1] == text2[p2 - 1] {
+        if p1 > 0 && p2 > 0 && val == table[p1-1][p2-1] && text1[p1-1] == text2[p2 - 1] {
             walk.push(DiffElement::Equal(text1[p1-1].to_string()));
             p1 -= 1;
             p2 -= 1;
-        } else if val == table[p1-1][p2-1] + 1 && text1[p1-1] != text2[p2 - 1] {
+        } else if p1 > 0 && p2 > 0 && val == table[p1-1][p2-1] + 1 && text1[p1-1] != text2[p2 - 1] {
             walk.push(DiffElement::Different(text1[p1-1].to_string(), text2[p2 - 1].to_string()));
             p1 -= 1;
             p2 -= 1;
-        } else if val == table[p1-1][p2] + 1 {
+        } else if p1 > 0 && val == table[p1-1][p2] + 1 {
             walk.push(DiffElement::Insert1(text1[p1-1].to_string()));
             p1 -= 1;
         } else {
-            assert!(val == table[p1-1][p2] + 1);
+            assert!(val == table[p1][p2-1] + 1);
             walk.push(DiffElement::Insert2(text2[p2-1].to_string()));
             p2 -= 1;
         }
     }
     walk.reverse();
-    (table[text1.len() - 1][text2.len() - 1], walk)
+    (table[text1.len()][text2.len()], walk)
 }
 
 fn print_edit_script(es : &Vec<DiffElement<String>>) {
@@ -119,4 +119,20 @@ pub fn compare(text1: String, text2: String) {
     for el in diff {
         show_diff(&el);
     }
+}
+
+#[test]
+fn test_compare_sentences() {
+    assert!(
+        compare_sentences("Hello world".split(" ").collect(), "Hello world".split(" ").collect()).0
+        == 0);
+    assert!(
+        compare_sentences("Hello world".split(" ").collect(), "Hello cruel world".split(" ").collect()).0
+        == 1);
+    assert!(
+        compare_sentences("Hello world".split(" ").collect(), "Goodbye cruel world".split(" ").collect()).0
+        == 2);
+    assert!(
+        compare_sentences("Hello world".split(" ").collect(), "Goodbye mediocre Paris".split(" ").collect()).0
+        == 3);
 }
