@@ -3,14 +3,22 @@ use super::parse::*;
 use colored::*;
 
 #[derive(Debug)]
-enum DiffElement {
-    Equal(String),
-    Insert1(String),
-    Insert2(String),
-    Different(String, String),
+
+enum DiffElement<T> {
+    Equal(T),
+    Insert1(T),
+    Insert2(T),
+    Different(T, T),
 }
 
-fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> (u64, Vec<DiffElement>) {
+
+fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> (u64, Vec<DiffElement<String>>) {
+    if text1 == text2 {
+        return (0, text1
+                    .iter()
+                    .map(|s| { DiffElement::Equal(s.to_string()) })
+                    .collect());
+    }
     let mut table : Vec<Vec<u64>> = Vec::new();
     table.resize_with(text2.len() + 1, || {
         let mut v = Vec::new();
@@ -59,7 +67,7 @@ fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> (u64, Vec<DiffElemen
     (table[text1.len() - 1][text2.len() - 1], walk)
 }
 
-fn print_edit_script(es : &Vec<DiffElement>) {
+fn print_edit_script(es : &Vec<DiffElement<String>>) {
     for el in es {
         match el {
             DiffElement::Equal(s) => print!("{} ", s),
@@ -71,7 +79,7 @@ fn print_edit_script(es : &Vec<DiffElement>) {
     println!("");
 }
 
-fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement> {
+fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement<String>> {
     let mut res = Vec::new();
     let max_len = max(text1.len(), text2.len());
     for ix in 0..max_len {
@@ -88,7 +96,7 @@ fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement> {
     return res;
 }
 
-fn show_diff(el : &DiffElement) {
+fn show_diff(el : &DiffElement<String>) {
     match el {
         DiffElement::Equal(_) => {
         }
