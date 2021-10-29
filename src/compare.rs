@@ -88,35 +88,28 @@ fn print_edit_script(es : &Vec<DiffElement<String>>) {
     println!("");
 }
 
-fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement<Sentence>> {
-    edit_distance(text1,
-                  text2,
-                  |t1,t2| { compare_sentences(&t1, &t2).0 },
-                  4).1
-}
-
-fn show_diff(el : &DiffElement<Sentence>) {
-    match el {
-        DiffElement::Equal(_) => {
-        }
-        DiffElement::Insert1(s) => {
-            println!("+ {}", s.0.green());
-        }
-        DiffElement::Insert2(s) => {
-            println!("- {}", s.0.red());
-        }
-        DiffElement::Different(s1, s2) => {
-            print_edit_script(&compare_sentences(s1, s2).1);
-        }
-    }
-}
-
 pub fn compare(text1: String, text2: String) {
     let sentences1 : Vec<Sentence> = super::parse::sentences(text1);
     let sentences2 : Vec<Sentence> = super::parse::sentences(text2);
-    let diff = gen_diff(sentences1, sentences2);
+    let diff = edit_distance(
+                    sentences1,
+                    sentences2,
+                    |t1,t2| { compare_sentences(&t1, &t2).0 },
+                    4).1;
     for el in diff {
-        show_diff(&el);
+        match el {
+            DiffElement::Equal(_) => {
+            }
+            DiffElement::Insert1(s) => {
+                println!("+ {}", s.0.green());
+            }
+            DiffElement::Insert2(s) => {
+                println!("- {}", s.0.red());
+            }
+            DiffElement::Different(s1, s2) => {
+                print_edit_script(&compare_sentences(&s1, &s2).1);
+            }
+        }
     }
 }
 
