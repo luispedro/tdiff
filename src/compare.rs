@@ -1,9 +1,8 @@
-use std::cmp::{min, max};
+use std::cmp::min;
 use super::parse::*;
 use colored::*;
 
 #[derive(Debug)]
-
 enum DiffElement<T> {
     Equal(T),
     Insert1(T),
@@ -12,7 +11,7 @@ enum DiffElement<T> {
 }
 
 
-fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T, &T) -> u64) -> (u64, Vec<DiffElement<T>>) {
+fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T, &T) -> u64, icost: u64) -> (u64, Vec<DiffElement<T>>) {
     let mut table : Vec<Vec<u64>> = Vec::new();
     table.resize_with(text1.len() + 1, || {
         let mut v = Vec::new();
@@ -20,17 +19,17 @@ fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T,
         v
     });
     for i in 0..text1.len() {
-        table[i+1][0] = 1+i as u64;
+        table[i+1][0] = icost * (1+i) as u64;
     }
 
     for j in 0..text2.len() {
-        table[0][j+1] = 1+j as u64;
+        table[0][j+1] = icost * (1+j) as u64;
     }
     for i in 1..(1+text1.len()) {
         for j in 1..(1+text2.len()) {
             table[i][j] = min(min(
-                            table[i-1][i] + 1,
-                            table[i][j-1] + 1),
+                            table[i-1][j] + icost,
+                            table[i][j-1] + icost),
                             table[i-1][j-1] + cmp(&text1[i-1], &text2[j-1])
                             )
         }
@@ -48,11 +47,11 @@ fn edit_distance<T: PartialEq + Clone>(text1: Vec<T>, text2: Vec<T>, cmp: fn(&T,
             walk.push(DiffElement::Different(text1[p1-1].clone(), text2[p2 - 1].clone()));
             p1 -= 1;
             p2 -= 1;
-        } else if p1 > 0 && val == table[p1-1][p2] + 1 {
+        } else if p1 > 0 && val == table[p1-1][p2] + icost {
             walk.push(DiffElement::Insert1(text1[p1-1].clone()));
             p1 -= 1;
         } else {
-            assert!(val == table[p1][p2-1] + 1);
+            assert!(val == table[p1][p2-1] + icost);
             walk.push(DiffElement::Insert2(text2[p2-1].clone()));
             p2 -= 1;
         }
@@ -70,9 +69,10 @@ fn compare_sentences(text1: &Sentence, text2: &Sentence) -> (u64, Vec<DiffElemen
                     .collect());
     }
     let word_split = |s:&Sentence| { s.0.split(" ").map(|s| { s.to_string() }).collect() };
-    return edit_distance(word_split(text1),
-                         word_split(text2),
-                         |t1, t2| { if t1 == t2 { 0 } else { 1 } })
+    edit_distance(word_split(text1),
+                 word_split(text2),
+                 |t1, t2| { if t1 == t2 { 0 } else { 1 } },
+                 1)
 }
 
 
@@ -89,20 +89,10 @@ fn print_edit_script(es : &Vec<DiffElement<String>>) {
 }
 
 fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement<Sentence>> {
-    let mut res = Vec::new();
-    let max_len = max(text1.len(), text2.len());
-    for ix in 0..max_len {
-        if ix >= text1.len() {
-            res.push(DiffElement::Insert1(text2[ix].clone()));
-        } else if ix >= text2.len() {
-            res.push(DiffElement::Insert2(text1[ix].clone()));
-        } else if text1[ix] == text2[ix] {
-            res.push(DiffElement::Equal(text1[ix].clone()));
-        } else {
-            res.push(DiffElement::Different(text1[ix].clone(), text2[ix].clone()));
-        }
-    }
-    return res;
+    edit_distance(text1,
+                  text2,
+                  |t1,t2| { compare_sentences(&t1, &t2).0 },
+                  4).1
 }
 
 fn show_diff(el : &DiffElement<Sentence>) {
