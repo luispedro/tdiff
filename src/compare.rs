@@ -1,4 +1,4 @@
-use std::cmp::max;
+use std::cmp::{min, max};
 use super::parse::*;
 
 enum DiffElement {
@@ -8,6 +8,31 @@ enum DiffElement {
     Different(String, String),
 }
 
+fn compare_sentences(text1: Vec<&str>, text2: Vec<&str>) -> u64 {
+    let mut table : Vec<Vec<u64>> = Vec::new();
+    table.resize_with(text2.len() + 1, || {
+        let mut v = Vec::new();
+        v.resize(text1.len() + 1, 0);
+        v
+    });
+    for i in 0..text1.len() {
+        table[0][i+1] = i as u64;
+    }
+
+    for j in 0..text2.len() {
+        table[j+1][0] = j as u64;
+    }
+    for i in 1..(1+text1.len()) {
+        for j in 1..(1+text2.len()) {
+            table[i][j] = min(min(
+                            table[i-1][i] + 1,
+                            table[i][j-1] + 1),
+                            table[i-1][j-1] + (if text1[i-1] == text2[j-1] { 0 } else { 1 })
+                            )
+        }
+    }
+    table[text1.len() - 1][text2.len() - 1]
+}
 
 fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement> {
     let mut res = Vec::new();
@@ -28,8 +53,8 @@ fn gen_diff(text1: Vec<Sentence>, text2: Vec<Sentence>) -> Vec<DiffElement> {
 
 fn show_diff(el : &DiffElement) {
     match el {
-        DiffElement::Equal(s) => {
-            println!("= {}", s);
+        DiffElement::Equal(_) => {
+            println!("=");
         }
         DiffElement::Insert1(s) => {
             println!("+ {}", s);
@@ -40,6 +65,7 @@ fn show_diff(el : &DiffElement) {
         DiffElement::Different(s1, s2) => {
             println!("! {}", s1);
             println!("! {}", s2);
+            println!("D:  {}", compare_sentences(s1.split(" ").collect(), s2.split(" ").collect()));
         }
     }
 }
