@@ -1,5 +1,14 @@
 #[derive(Debug, Clone, PartialEq)]
-pub struct Sentence(pub String);
+pub struct Sentence {
+    pub content: String,
+
+}
+
+impl Sentence {
+    pub fn mk_sentence(content : String) -> Self {
+        Sentence { content }
+    }
+}
 
 fn normalize_sentence(sen : &str) -> String {
     return sen
@@ -14,7 +23,7 @@ pub fn sentences(text : String) -> Vec<Sentence> {
         .split(".")
         .map(normalize_sentence)
         .filter(|s| { s.len() > 0 })
-        .map(Sentence)
+        .map(Sentence::mk_sentence)
         .collect();
 }
 

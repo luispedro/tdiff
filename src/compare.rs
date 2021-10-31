@@ -63,12 +63,12 @@ fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&
 fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<DiffElement<&'a str>>) {
     if text1 == text2 {
         return (0, text1
-                    .0
+                    .content
                     .split(" ")
                     .map(|s| { DiffElement::Equal(s) })
                     .collect());
     }
-    let word_split = |s:&'a Sentence| { s.0.split(" ").collect() };
+    let word_split = |s:&'a Sentence| { s.content.split(" ").collect() };
     edit_distance(
                  &word_split(text1),
                  &word_split(text2),
@@ -102,10 +102,10 @@ pub fn compare(text1: String, text2: String) {
             DiffElement::Equal(_) => {
             }
             DiffElement::Insert1(s) => {
-                println!("+ {}", s.0.green());
+                println!("+ {}", s.content.green());
             }
             DiffElement::Insert2(s) => {
-                println!("- {}", s.0.red());
+                println!("- {}", s.content.red());
             }
             DiffElement::Different(s1, s2) => {
                 print_edit_script(&compare_sentences(&s1, &s2).1);
@@ -116,7 +116,7 @@ pub fn compare(text1: String, text2: String) {
 
 #[test]
 fn test_compare_sentences() {
-    let to_s = |s:&str| { Sentence(s.to_string()) };
+    let to_s = |s:&str| { Sentence::mk_sentence(s.to_string()) };
     assert!(
         compare_sentences(&to_s("Hello world"), &to_s("Hello world")).0
         == 0);
