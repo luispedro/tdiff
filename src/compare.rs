@@ -68,10 +68,9 @@ fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<
                     .map(|s| { DiffElement::Equal(s) })
                     .collect());
     }
-    let word_split = |s:&'a Sentence| { s.content.split(" ").collect() };
     edit_distance(
-                 &word_split(text1),
-                 &word_split(text2),
+                 &text1.words(),
+                 &text2.words(),
                  |t1, t2| { if t1 == t2 { 0 } else { 1 } },
                  1)
 }

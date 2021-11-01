@@ -1,12 +1,17 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sentence {
     pub content: String,
-
 }
 
 impl Sentence {
     pub fn mk_sentence(content : String) -> Self {
         Sentence { content }
+    }
+    pub fn words<'a>(self : &'a Self) -> Vec<&'a str> {
+        self
+            .content
+            .split_whitespace()
+            .collect()
     }
 }
 
