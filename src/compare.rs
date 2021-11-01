@@ -64,7 +64,7 @@ fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<
     if text1 == text2 {
         return (0, text1
                     .content
-                    .split(" ")
+                    .split_whitespace()
                     .map(|s| { DiffElement::Equal(s) })
                     .collect());
     }
