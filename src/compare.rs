@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 use super::parse::*;
 use colored::*;
 
@@ -76,7 +76,8 @@ fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<
                     .map(|s| { DiffElement::Equal(s) })
                     .collect());
     } else if too_different(&text1, &text2) {
-        return ((text1.n_words + text2.n_words) as u64, vec![DiffElement::Different(&text1.content, &text2.content)]);
+        return (max(text1.n_words, text2.n_words).try_into().unwrap(),
+                vec![DiffElement::Different(&text1.content, &text2.content)]);
 
     }
     edit_distance(
