@@ -1,11 +1,34 @@
-#[derive(Debug, Clone, PartialEq)]
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+
+#[derive(Debug, Clone)]
 pub struct Sentence {
     pub content: String,
+    pub n_words: i64,
+    pub hash_words: i64,
+}
+
+impl PartialEq for Sentence {
+    fn eq(&self, other: &Self) -> bool {
+        self.hash_words == other.hash_words && self.content == other.content
+    }
 }
 
 impl Sentence {
     pub fn mk_sentence(content : String) -> Self {
-        Sentence { content }
+        let words : Vec<&str> = content
+                        .split_whitespace()
+                        .collect();
+        let n_words = words.len() as i64;
+        let mut hash_words = 0;
+        for w in words {
+            let mut hasher = DefaultHasher::new();
+            w.hash(&mut hasher);
+            let h = hasher.finish();
+            hash_words |= 1 << (h % 0x3f);
+        }
+        Sentence { content, n_words, hash_words }
     }
     pub fn words<'a>(self : &'a Self) -> Vec<&'a str> {
         self

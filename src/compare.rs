@@ -60,6 +60,14 @@ fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&
     (table[text1.len()][text2.len()], walk)
 }
 
+fn too_different(text1: &Sentence, text2: &Sentence) -> bool {
+    let n1 = text1.hash_words.count_ones();
+    let n2 = text2.hash_words.count_ones();
+    let common = (text1.hash_words & text2.hash_words).count_ones();
+    assert!(min(n1, n2) >= common);
+    return min(n1,n2) - common > min(n1,n2)/2;
+}
+
 fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<DiffElement<&'a str>>) {
     if text1 == text2 {
         return (0, text1
@@ -67,6 +75,9 @@ fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<
                     .split_whitespace()
                     .map(|s| { DiffElement::Equal(s) })
                     .collect());
+    } else if too_different(&text1, &text2) {
+        return ((text1.n_words + text2.n_words) as u64, vec![DiffElement::Different(&text1.content, &text2.content)]);
+
     }
     edit_distance(
                  &text1.words(),
