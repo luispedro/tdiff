@@ -11,7 +11,7 @@ enum DiffElement<T> {
 }
 
 
-fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&T, &T) -> u64, icost: u64) -> (u64, Vec<DiffElement<T>>) {
+fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&T, &T) -> u64, icost: u64, compute_back : bool) -> (u64, Option<Vec<DiffElement<T>>>) {
     let mut table : Vec<Vec<u64>> = Vec::new();
     table.resize_with(text1.len() + 1, || {
         let mut v = Vec::new();
@@ -33,6 +33,9 @@ fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&
                             table[i-1][j-1] + cmp(&text1[i-1], &text2[j-1])
                             )
         }
+    }
+    if ! compute_back {
+        return (table[text1.len()][text2.len()], None);
     }
     let mut walk = Vec::new();
     let mut p1 = text1.len();
@@ -57,7 +60,7 @@ fn edit_distance<T: PartialEq + Clone>(text1: &Vec<T>, text2: &Vec<T>, cmp: fn(&
         }
     }
     walk.reverse();
-    (table[text1.len()][text2.len()], walk)
+    (table[text1.len()][text2.len()], Some(walk))
 }
 
 fn too_different(text1: &Sentence, text2: &Sentence) -> bool {
@@ -68,23 +71,24 @@ fn too_different(text1: &Sentence, text2: &Sentence) -> bool {
     return min(n1,n2) - common > min(n1,n2)/2;
 }
 
-fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence) -> (u64, Vec<DiffElement<&'a str>>) {
+fn compare_sentences<'a>(text1: &'a Sentence, text2: &'a Sentence, compute_back : bool) -> (u64, Option<Vec<DiffElement<&'a str>>>) {
     if text1 == text2 {
-        return (0, text1
+        return (0, Some(text1
                     .content
                     .split_whitespace()
                     .map(|s| { DiffElement::Equal(s) })
-                    .collect());
+                    .collect()));
     } else if too_different(&text1, &text2) {
         return (max(text1.n_words, text2.n_words).try_into().unwrap(),
-                vec![DiffElement::Different(&text1.content, &text2.content)]);
+                Some(vec![DiffElement::Different(&text1.content, &text2.content)]));
 
     }
     edit_distance(
                  &text1.words(),
                  &text2.words(),
                  |t1, t2| { if t1 == t2 { 0 } else { 1 } },
-                 1)
+                 1,
+                 compute_back)
 }
 
 
@@ -106,8 +110,9 @@ pub fn compare(text1: String, text2: String) {
     let diff = edit_distance(
                     &sentences1,
                     &sentences2,
-                    |t1,t2| { compare_sentences(&t1, &t2).0 },
-                    4).1;
+                    |t1,t2| { compare_sentences(&t1, &t2, false).0 },
+                    4,
+                    true).1.unwrap();
     for el in diff {
         match el {
             DiffElement::Equal(_) => {
@@ -119,7 +124,7 @@ pub fn compare(text1: String, text2: String) {
                 println!("- {}", s.content.red());
             }
             DiffElement::Different(s1, s2) => {
-                print_edit_script(&compare_sentences(&s1, &s2).1);
+                print_edit_script(&compare_sentences(&s1, &s2, true).1.unwrap());
             }
         }
     }
@@ -129,15 +134,15 @@ pub fn compare(text1: String, text2: String) {
 fn test_compare_sentences() {
     let to_s = |s:&str| { Sentence::mk_sentence(s.to_string()) };
     assert!(
-        compare_sentences(&to_s("Hello world"), &to_s("Hello world")).0
+        compare_sentences(&to_s("Hello world"), &to_s("Hello world"), false).0
         == 0);
     assert!(
-        compare_sentences(&to_s("Hello world"), &to_s("Hello cruel world")).0
+        compare_sentences(&to_s("Hello world"), &to_s("Hello cruel world"), false).0
         == 1);
     assert!(
-        compare_sentences(&to_s("Hello world"), &to_s("Goodbye cruel world")).0
+        compare_sentences(&to_s("Hello world"), &to_s("Goodbye cruel world"), false).0
         == 2);
     assert!(
-        compare_sentences(&to_s("Hello world"), &to_s("Goodbye mediocre Paris")).0
+        compare_sentences(&to_s("Hello world"), &to_s("Goodbye mediocre Paris"), false).0
         == 3);
 }
